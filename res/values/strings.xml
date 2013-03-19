@@ -1,0 +1,8 @@
+<resources>
+
+    <string name="app_name">GPS</string>
+    <string name="hello_world">Brak danych</string>
+    <string name="menu_exit">Wyjście</string>
+    <string name="title_activity_main">GPS</string>
+
+</resources>
