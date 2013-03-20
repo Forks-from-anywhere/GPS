@@ -41,6 +41,9 @@ public class MainActivity extends Activity {
 	TextView text;
 	String lat;
 	String lon;
+	String alt;
+	String acc;
+	String provider;
 	String phoneNumber;
 	String date;
 	String time;
@@ -87,6 +90,9 @@ public class MainActivity extends Activity {
 			public void onLocationChanged(Location location) {	
 				lat = Double.toString(location.getLatitude());
 				lon = Double.toString(location.getLongitude());
+				alt = Double.toString(location.getAltitude());
+				acc = Double.toString(location.getAccuracy());
+				provider = location.getProvider();
 				
 				System.out.println(lat +" : "+ lon);
 //				double d = getDistanse(lastLat, lat, lastLon, lon);
@@ -117,7 +123,7 @@ public class MainActivity extends Activity {
 				if (kolejka.size() != 0 
 						&& !kolejka.get(kolejka.size()-1).getLat().equals(lat) 
 						&& !kolejka.get(kolejka.size()-1).getLon().equals(lon) ) {
-							kolejka.add(new GPSPoint(lat, lon, phoneNumber, date, time, city, street, country));
+							kolejka.add(new GPSPoint(lat, lon, alt, acc, provider, phoneNumber, date, time, city, street, country));
 							updateText();
 							currentNetworkStatus = conManager.getActiveNetworkInfo();
 							if (currentNetworkStatus != null && currentNetworkStatus.isConnected()) {
@@ -128,7 +134,7 @@ public class MainActivity extends Activity {
 							}
 				} else if(kolejka.size() == 0){
 //					if (d >= 10) {
-						kolejka.add(new GPSPoint(lat, lon, phoneNumber, date, time, city, street, country));
+						kolejka.add(new GPSPoint(lat, lon, alt, acc, provider, phoneNumber, date, time, city, street, country));
 						updateText();
 						currentNetworkStatus = conManager.getActiveNetworkInfo();
 						if (currentNetworkStatus != null && currentNetworkStatus.isConnected()) {
@@ -188,7 +194,7 @@ public class MainActivity extends Activity {
     		HttpGet request;
     		HttpResponse response;
     		for (int i = 0; i < kolejka.size(); i++) {
-    			String reqString = "http://www.web-artz.pl/gps.php?lat="+kolejka.get(i).getLat()+"&lon="+kolejka.get(i).getLon()+"&id="+kolejka.get(i).getId()+"&date="+kolejka.get(i).getDate()+"&time="+kolejka.get(i).getTime();
+    			String reqString = "http://www.web-artz.pl/gps.php?lat="+kolejka.get(i).getLat()+"&lon="+kolejka.get(i).getLon()+"&alt="+kolejka.get(i).getAlt()+"&acc="+kolejka.get(i).getAcc()+"&provder="+kolejka.get(i).getProvider()+"&id="+kolejka.get(i).getId()+"&date="+kolejka.get(i).getDate()+"&time="+kolejka.get(i).getTime();
     			request = new HttpGet(reqString);
     			response = client.execute(request);
     			String debug = (String) text.getText();
@@ -198,16 +204,20 @@ public class MainActivity extends Activity {
 			}
 			
 		} catch (ClientProtocolException e) {
-			kolejka.add(new GPSPoint(lat, lon, phoneNumber, date, time, city, street, country));
+			kolejka.add(new GPSPoint(lat, lon, alt, acc, provider, phoneNumber, date, time, city, street, country));
 		} catch (IOException e) {
-			kolejka.add(new GPSPoint(lat, lon, phoneNumber, date, time, city, street, country));
+			kolejka.add(new GPSPoint(lat, lon, alt, acc, provider, phoneNumber, date, time, city, street, country));
 		}
     }
     
     public void updateText(){
     	String kolejkaString = "";
 		for (int i = 0; i < kolejka.size(); i++) {
-			kolejkaString += kolejka.get(i).getLat()+" : "+kolejka.get(i).getLon()+"\n";
+			kolejkaString += "Lat: "+kolejka.get(i).getLat()+"\n";
+			kolejkaString += "Lon: "+kolejka.get(i).getLon()+"\n";
+			kolejkaString += "Alt: "+kolejka.get(i).getAlt()+"\n";
+			kolejkaString += "Acc: "+kolejka.get(i).getAcc()+"\n";
+			kolejkaString += "Provider: "+kolejka.get(i).getProvider()+"\n";
 			
 			if (kolejka.get(i).getStreet()!="" && kolejka.get(i).getCity()!="" && kolejka.get(i).getCountry()!="") {
 				kolejkaString += kolejka.get(i).getStreet()+", "+kolejka.get(i).getCity()+", "+kolejka.get(i).getCountry()+"\n";
