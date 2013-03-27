@@ -16,7 +16,10 @@ import org.apache.http.impl.client.DefaultHttpClient;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.Notification;
+import android.app.NotificationManager;
 import android.content.Context;
+import android.graphics.Color;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.GpsStatus.Listener;
@@ -59,19 +62,23 @@ public class MainActivity extends Activity {
 	ConnectivityManager conManager;
 	LocationListener locationListener;
 	
-	final static int MIN_LOCATION_INTERVAL = 4*1000; 	// millis
-	final static int MIN_LOCATION_DISTANCE = 2;			// meters
+	final static int MIN_LOCATION_INTERVAL = 10*1000; 	// millis
+	final static int MIN_LOCATION_DISTANCE = 10;			// meters
 	
 	StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+	NotificationManager notifMgr;
+	Notification notif;
 	
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        notifMgr = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        notif = new Notification();
         
         text = (TextView)findViewById(R.id.text);
         text.setText(
-        		"MIN_LOCATION_INTERVAL: "+MIN_LOCATION_INTERVAL+" millis\n"+
+        		"MIN_LOCATION_INTERVAL: "+MIN_LOCATION_INTERVAL/1000+" s\n"+
         		"MIN_LOCATION_DISTANCE: "+MIN_LOCATION_DISTANCE+" meters"
         		);
         
@@ -84,10 +91,22 @@ public class MainActivity extends Activity {
         phoneNumber =  mTelephonyMgr.getLine1Number();
 //        phoneNumber =  "666666666";
         
+        notif.ledARGB = Color.argb(0, 0, 255, 255);
+        notif.flags |= Notification.FLAG_SHOW_LIGHTS;
+        notif.ledOnMS = 300;
+        notif.ledOffMS = 100;
+        notifMgr.notify(0, notif);
+        
         locationListener = new LocationListener() {
 
 			@Override
-			public void onLocationChanged(Location location) {	
+			public void onLocationChanged(Location location) {
+				notif.ledARGB = Color.argb(0, 0, 255, 255);
+		        notif.flags |= Notification.FLAG_SHOW_LIGHTS;
+		        notif.ledOnMS = 1000;
+		        notif.ledOffMS = 0;
+		        notifMgr.notify(0, notif);
+		        
 				lat = Double.toString(location.getLatitude());
 				lon = Double.toString(location.getLongitude());
 				alt = Double.toString(location.getAltitude());
@@ -123,17 +142,19 @@ public class MainActivity extends Activity {
 				if (kolejka.size() != 0 
 						&& !kolejka.get(kolejka.size()-1).getLat().equals(lat) 
 						&& !kolejka.get(kolejka.size()-1).getLon().equals(lon) ) {
-							kolejka.add(new GPSPoint(lat, lon, alt, acc, provider, phoneNumber, date, time, city, street, country));
-							updateText();
-							currentNetworkStatus = conManager.getActiveNetworkInfo();
-							if (currentNetworkStatus != null && currentNetworkStatus.isConnected()) {
-								sendData();
-								lastLon = lon;
-								lastLat = lat;
-								kolejka.clear();
+							if (Double.valueOf(acc) <= 10) {
+								kolejka.add(new GPSPoint(lat, lon, alt, acc, provider, phoneNumber, date, time, city, street, country));
+								updateText();
+								currentNetworkStatus = conManager.getActiveNetworkInfo();
+								if (currentNetworkStatus != null && currentNetworkStatus.isConnected()) {
+									sendData();
+									lastLon = lon;
+									lastLat = lat;
+									kolejka.clear();
+								}
 							}
 				} else if(kolejka.size() == 0){
-//					if (d >= 10) {
+					if (Double.valueOf(acc) <= 10) {
 						kolejka.add(new GPSPoint(lat, lon, alt, acc, provider, phoneNumber, date, time, city, street, country));
 						updateText();
 						currentNetworkStatus = conManager.getActiveNetworkInfo();
@@ -143,7 +164,7 @@ public class MainActivity extends Activity {
 							lastLat = lat;
 							kolejka.clear();
 						}
-//					}
+					}
 				}
 			}
 
@@ -180,6 +201,7 @@ public class MainActivity extends Activity {
         // Handle item selection
         switch (item.getItemId()) {
             case R.id.menu_exit:
+            	notifMgr.cancelAll();
             	finish();
             	System.exit(0);
             default:
